@@ -5,11 +5,23 @@ pub enum DuckDbValue {
     Null,
     String(String),
     Number(i64),
-    Decimal(rust_decimal::Decimal),
+    Double(f64),
     Bool(bool),
 }
 
 impl DuckDbValue {
+    pub fn as_to_sql(&self) -> &(dyn ToSql + 'static) {
+        match self {
+            DuckDbValue::Null => {
+                todo!("Null value")
+            }
+            DuckDbValue::String(value) => value,
+            DuckDbValue::Number(value) => value,
+            DuckDbValue::Double(value) => value,
+            DuckDbValue::Bool(value) => value,
+        }
+    }
+
     pub fn from_value_ref(value: ValueRef) -> Self {
         match value {
             ValueRef::Null => Self::Null,
@@ -25,7 +37,11 @@ impl DuckDbValue {
             ValueRef::UBigInt(value) => Self::Number(value as i64),
             ValueRef::Float(value) => Self::Number(value as i64),
             ValueRef::Double(value) => Self::Number(value as i64),
-            ValueRef::Decimal(decimal) => Self::Decimal(decimal),
+            ValueRef::Decimal(decimal) => {
+                let value = decimal.to_string(); //todo!("Optimize it")
+                let value = value.parse().unwrap();
+                Self::Double(value)
+            }
 
             ValueRef::Timestamp(_, _) => {
                 todo!("Not supported type time_unit");

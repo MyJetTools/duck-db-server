@@ -6,5 +6,5 @@ pub async fn get_table_schema_description(
     app: &Arc<AppContext>,
     table_name: &str,
 ) -> Result<Vec<DuckDbRow>, String> {
-    return super::execute_select(app, format!("DESCRIBE {}", table_name)).await;
+    return super::execute_select(app, format!("DESCRIBE {}", table_name), vec![]).await;
 }

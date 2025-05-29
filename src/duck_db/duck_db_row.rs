@@ -21,7 +21,6 @@ impl DuckDbRow {
             }
         }
 
-        println!("{:?}", columns);
         Self { columns }
     }
 
@@ -39,7 +38,7 @@ impl DuckDbRow {
                 DuckDbValue::Number(value) => {
                     result.write(column.0.as_str(), *value);
                 }
-                DuckDbValue::Decimal(value) => {
+                DuckDbValue::Double(value) => {
                     result.write(column.0.as_str(), *value);
                 }
                 DuckDbValue::Bool(value) => {

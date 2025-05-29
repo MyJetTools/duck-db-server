@@ -31,11 +31,11 @@ async fn handle_request(
     input_data: ExecuteSelectModel,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let result = crate::scripts::execute_select(&action.app, input_data.sql).await;
-
     let data = input_data.params.as_slice();
 
-    println!("Params: {}", std::str::from_utf8(data).unwrap());
+    let params = crate::duck_db::deserialize_prams(data);
+
+    let result = crate::scripts::execute_select(&action.app, input_data.sql, params).await;
 
     let result = match result {
         Ok(ok) => ok,

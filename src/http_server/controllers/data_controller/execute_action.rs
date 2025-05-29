@@ -1,3 +1,4 @@
+use my_http_server::types::RawDataTyped;
 use my_http_server::{HttpContext, HttpFailResult, HttpOkResult};
 use my_http_server::{HttpOutput, macros::*};
 use std::sync::Arc;
@@ -30,7 +31,11 @@ async fn handle_request(
     input_data: ExecuteModel,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let result = crate::scripts::execute(&action.app, input_data.sql).await;
+    let data = input_data.params.as_slice();
+
+    let params = crate::duck_db::deserialize_prams(data);
+
+    let result = crate::scripts::execute(&action.app, input_data.sql, params).await;
 
     let result = match result {
         Ok(ok) => ok,
@@ -48,4 +53,6 @@ async fn handle_request(
 pub struct ExecuteModel {
     #[http_body(description:"Sql statement")]
     pub sql: String,
+    #[http_body(description = "Sql Parameters")]
+    pub params: RawDataTyped<Vec<String>>,
 }
