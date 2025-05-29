@@ -1,3 +1,4 @@
+use my_http_server::types::RawDataTyped;
 use my_http_server::{HttpContext, HttpFailResult, HttpOkResult};
 use my_http_server::{HttpOutput, macros::*};
 use std::sync::Arc;
@@ -32,6 +33,10 @@ async fn handle_request(
 ) -> Result<HttpOkResult, HttpFailResult> {
     let result = crate::scripts::execute_select(&action.app, input_data.sql).await;
 
+    let data = input_data.params.as_slice();
+
+    println!("Params: {}", std::str::from_utf8(data).unwrap());
+
     let result = match result {
         Ok(ok) => ok,
         Err(err) => return HttpFailResult::as_fatal_error(err).into_err(),
@@ -57,4 +62,6 @@ async fn handle_request(
 pub struct ExecuteSelectModel {
     #[http_body(description:"Sql statement")]
     pub sql: String,
+    #[http_body(description = "Sql Parameters")]
+    pub params: RawDataTyped<Vec<String>>,
 }
