@@ -14,5 +14,10 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
     result.register_post_action(Arc::new(super::data_controller::ExecuteAction::new(
         app.clone(),
     )));
+
+    //Table
+    result.register_get_action(Arc::new(super::table_controller::DescribeAction::new(
+        app.clone(),
+    )));
     result
 }

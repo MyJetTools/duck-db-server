@@ -30,36 +30,13 @@ async fn handle_request(
     input_data: ExecuteModel,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let result = crate::flows::execute(&action.app, input_data.sql).await;
+    let result = crate::scripts::execute(&action.app, input_data.sql).await;
 
     let result = match result {
         Ok(ok) => ok,
         Err(err) => return HttpFailResult::as_fatal_error(err).into_err(),
     };
 
-    /*
-       let mut json_writer = my_json::json_writer::JsonArrayWriter::new();
-
-       for db_row in result {
-           let mut json_object_writer = my_json::json_writer::JsonObjectWriter::new();
-
-           for db_column in db_row.columns {
-               match db_column {
-                   crate::flows::DuckDbValue::Null => {
-                       json_object_writer.write(key, value);
-                   }
-                   crate::flows::DuckDbValue::Undefined => todo!(),
-                   crate::flows::DuckDbValue::NaN => todo!(),
-                   crate::flows::DuckDbValue::String(_) => todo!(),
-                   crate::flows::DuckDbValue::Number(_) => todo!(),
-                   crate::flows::DuckDbValue::Double(_) => todo!(),
-                   crate::flows::DuckDbValue::Bool(_) => todo!(),
-               }
-           }
-       }
-
-       let result = json_writer.build();
-    */
     let result = HttpOutput::as_text(result.to_string())
         .set_content_type(my_http_server::WebContentType::Json)
         .into_ok_result(false);

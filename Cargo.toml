@@ -25,5 +25,7 @@ serde = "*"
 duckdb = { version = "*", features = ["bundled", "polars"] }
 async-trait = "*"
 
-my-json = { version = "0.3.1", git = "https://github.com/MyJetTools/my-json.git" }
+my-json = { version = "0.3.1", git = "https://github.com/MyJetTools/my-json.git", features = [
+    "decimal",
+] }
 rust_decimal = "*"

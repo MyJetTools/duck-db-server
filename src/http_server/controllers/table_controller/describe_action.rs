@@ -5,32 +5,32 @@ use std::sync::Arc;
 use crate::app_ctx::AppContext;
 
 #[http_route(
-    method: "POST",
-    route: "/data/select",
-    controller: "Data",
-    description: "Execute Select Request",
-    summary: "Execute Select Request",
-    input_data: ExecuteSelectModel,
+    method: "GET",
+    route: "/table/describe",
+    controller: "Table",
+    description: "Describe table schema",
+    summary: "Describe table schema",
+    input_data: DescribeTableInputData,
     result:[
-        {status_code: 200, description: "Single Row or array of rows"},
+        {status_code: 200, description: "Table description"},
     ]
 )]
-pub struct SelectAction {
+pub struct DescribeAction {
     app: Arc<AppContext>,
 }
 
-impl SelectAction {
+impl DescribeAction {
     pub fn new(app: Arc<AppContext>) -> Self {
         Self { app }
     }
 }
 
 async fn handle_request(
-    action: &SelectAction,
-    input_data: ExecuteSelectModel,
+    action: &DescribeAction,
+    input_data: DescribeTableInputData,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let result = crate::scripts::execute_select(&action.app, input_data.sql).await;
+    let result = crate::scripts::get_table_schema(&action.app, &input_data.table_name).await;
 
     let result = match result {
         Ok(ok) => ok,
@@ -54,7 +54,7 @@ async fn handle_request(
 }
 
 #[derive(MyHttpInput)]
-pub struct ExecuteSelectModel {
-    #[http_body(description:"Sql statement")]
-    pub sql: String,
+pub struct DescribeTableInputData {
+    #[http_query(description:"Table name")]
+    pub table_name: String,
 }

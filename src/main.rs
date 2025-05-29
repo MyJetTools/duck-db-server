@@ -3,8 +3,9 @@ use std::sync::Arc;
 use app_ctx::AppContext;
 
 mod app_ctx;
-mod flows;
+mod duck_db;
 mod http_server;
+mod scripts;
 mod settings;
 
 #[tokio::main]
