@@ -1,6 +1,6 @@
 use super::DuckDbValue;
 
-pub fn deserialize_prams(data: &[u8]) -> Vec<DuckDbValue> {
+pub fn deserialize_params(data: &[u8]) -> Vec<DuckDbValue> {
     let json_reader = my_json::json_reader::JsonArrayIterator::new(data).unwrap();
 
     let mut result = Vec::new();

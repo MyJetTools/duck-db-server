@@ -4,3 +4,4 @@ mod execute;
 pub use execute::*;
 mod get_table_schema_description;
 pub use get_table_schema_description::*;
+mod contracts;
