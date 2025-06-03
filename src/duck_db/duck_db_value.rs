@@ -12,13 +12,12 @@ pub enum DuckDbValue {
     Bool(bool),
     Json(String),
 }
+const NULL: Null = Null;
 
 impl DuckDbValue {
     pub fn as_to_sql(&self) -> &(dyn ToSql + 'static) {
         match self {
-            DuckDbValue::Null => {
-                todo!("Null value")
-            }
+            DuckDbValue::Null => &NULL,
             DuckDbValue::String(value) => value,
             DuckDbValue::Json(value) => value,
             DuckDbValue::Number(value) => value,
@@ -43,7 +42,7 @@ impl DuckDbValue {
             ValueRef::Float(value) => Self::Number(value as i64),
             ValueRef::Double(value) => Self::Number(value as i64),
             ValueRef::Decimal(decimal) => {
-                let value = decimal.to_string(); //todo!("Optimize it")
+                let value = decimal.to_string();
                 let value = value.parse().unwrap();
                 Self::Double(value)
             }
