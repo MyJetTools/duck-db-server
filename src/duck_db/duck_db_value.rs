@@ -1,4 +1,7 @@
 use duckdb::types::*;
+use my_json::json_reader::{self, AsJsonSlice};
+use rust_extensions::{base64::IntoBase64, date_time::DateTimeAsMicroseconds};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub enum DuckDbValue {
@@ -7,6 +10,7 @@ pub enum DuckDbValue {
     Number(i64),
     Double(f64),
     Bool(bool),
+    Json(String),
 }
 
 impl DuckDbValue {
@@ -16,6 +20,7 @@ impl DuckDbValue {
                 todo!("Null value")
             }
             DuckDbValue::String(value) => value,
+            DuckDbValue::Json(value) => value,
             DuckDbValue::Number(value) => value,
             DuckDbValue::Double(value) => value,
             DuckDbValue::Bool(value) => value,
@@ -43,40 +48,122 @@ impl DuckDbValue {
                 Self::Double(value)
             }
 
-            ValueRef::Timestamp(_, _) => {
-                todo!("Not supported type time_unit");
+            ValueRef::Timestamp(ts, ts2) => match ts {
+                TimeUnit::Second => {
+                    Self::String(DateTimeAsMicroseconds::new(ts2 * 1000000).to_rfc3339())
+                }
+                TimeUnit::Millisecond => {
+                    Self::String(DateTimeAsMicroseconds::new(ts2 * 1000).to_rfc3339())
+                }
+                TimeUnit::Microsecond => {
+                    Self::String(DateTimeAsMicroseconds::new(ts2).to_rfc3339())
+                }
+                TimeUnit::Nanosecond => {
+                    Self::String(DateTimeAsMicroseconds::new(ts2 / 1000).to_rfc3339())
+                }
+            },
+            ValueRef::Text(items) => {
+                let value = std::str::from_utf8(items).unwrap().to_string();
+
+                println!("{}", value);
+
+                if check_is_json_object(items) {
+                    Self::Json(value)
+                } else if check_is_json_array(items) {
+                    Self::Json(value)
+                } else {
+                    Self::String(value)
+                }
             }
-            ValueRef::Text(items) => Self::String(std::str::from_utf8(items).unwrap().to_string()),
-            ValueRef::Blob(items) => Self::String(std::str::from_utf8(items).unwrap().to_string()),
+            ValueRef::Blob(items) => Self::String(items.into_base64()),
             ValueRef::Date32(dt) => Self::Number(dt as i64),
-            ValueRef::Time64(_, _) => {
-                todo!("Not supported time_unit")
-            }
+            ValueRef::Time64(v1, v2) => match v1 {
+                TimeUnit::Second => {
+                    Self::String(format_time(DateTimeAsMicroseconds::new(v2 * 1000000)))
+                }
+                TimeUnit::Millisecond => {
+                    Self::String(format_time(DateTimeAsMicroseconds::new(v2 * 1000)))
+                }
+                TimeUnit::Microsecond => Self::String(format_time(DateTimeAsMicroseconds::new(v2))),
+                TimeUnit::Nanosecond => {
+                    Self::String(DateTimeAsMicroseconds::new(v2 / 1000).to_rfc3339())
+                }
+            },
             ValueRef::Interval {
-                months: _,
-                days: _,
-                nanos: _,
+                months,
+                days,
+                nanos,
             } => {
-                todo!("Not supported interval")
+                let model = IntervalJsonModel {
+                    months,
+                    days,
+                    nanos,
+                };
+                let v = serde_json::to_string(&model).unwrap();
+                Self::Json(v)
             }
-            ValueRef::List(_, _) => {
-                todo!("Not supported list")
-            }
-            ValueRef::Enum(_, _) => {
-                todo!("Not supported enum")
-            }
-            ValueRef::Struct(_, _) => {
-                todo!("Not supported struct_array")
-            }
-            ValueRef::Array(_, _) => {
-                todo!("Not supported array")
-            }
-            ValueRef::Map(_, _) => {
-                todo!("Not supported map")
-            }
-            ValueRef::Union(_, _) => {
-                todo!("Not supported union")
-            }
+            ValueRef::List(v, _) => Self::String(format!("{:?}", v)),
+            ValueRef::Enum(e, _) => Self::String(format!("{:?}", e)),
+            ValueRef::Struct(s, _) => Self::String(format!("{:?}", s)),
+            ValueRef::Array(a, _) => Self::String(format!("{:?}", a)),
+            ValueRef::Map(m, _) => Self::String(format!("{:?}", m)),
+            ValueRef::Union(v, _) => Self::String(format!("{:?}", v)),
         }
     }
+}
+
+fn format_time(value: DateTimeAsMicroseconds) -> String {
+    let mut value = value.to_rfc3339();
+    value.drain(..11);
+
+    let mut index = None;
+    for (i, c) in value.chars().enumerate() {
+        if c == '+' || c == '-' {
+            index = Some(i);
+            break;
+        }
+    }
+
+    if let Some(index) = index {
+        value.drain(index..);
+    }
+
+    value
+}
+
+fn check_is_json_object(value: &[u8]) -> bool {
+    let first_line_parser = json_reader::JsonFirstLineIterator::new(value.as_slice());
+
+    while let Some(value) = first_line_parser.get_next() {
+        if value.is_err() {
+            return false;
+        }
+    }
+
+    true
+}
+
+fn check_is_json_array(value: &[u8]) -> bool {
+    let first_line_parser = json_reader::JsonArrayIterator::new(value.as_slice());
+
+    if first_line_parser.is_err() {
+        return false;
+    }
+
+    let first_line_parser = first_line_parser.unwrap();
+
+    while let Some(value) = first_line_parser.get_next() {
+        if value.is_err() {
+            return false;
+        }
+    }
+
+    true
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct IntervalJsonModel {
+    pub months: i32,
+    pub days: i32,
+    pub nanos: i64,
 }

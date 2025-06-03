@@ -44,6 +44,10 @@ impl DuckDbRow {
                 DuckDbValue::Bool(value) => {
                     result.write(column.0.as_str(), *value);
                 }
+
+                DuckDbValue::Json(value) => {
+                    result.write(column.0.as_str(), RawJsonObject::AsStr(value));
+                }
             }
         }
 
