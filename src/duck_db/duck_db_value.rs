@@ -64,8 +64,6 @@ impl DuckDbValue {
             ValueRef::Text(items) => {
                 let value = std::str::from_utf8(items).unwrap().to_string();
 
-                println!("{}", value);
-
                 if check_is_json_object(items) {
                     Self::Json(value)
                 } else if check_is_json_array(items) {
