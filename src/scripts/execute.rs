@@ -10,20 +10,29 @@ pub async fn execute(
     sql: String,
     params: Vec<DuckDbValue>,
 ) -> Result<usize, String> {
-    let mut sw = StopWatch::new();
-    sw.start();
+    let debug_sql = app.get_debug_sql_value().await;
 
-    let sql_to_measure = sql.to_string();
+    let debug_sql = if debug_sql {
+        let mut sw = StopWatch::new();
+        sw.start();
+
+        let sql_to_monitor = sql.to_string();
+
+        Some((sw, sql_to_monitor))
+    } else {
+        None
+    };
 
     let result = tokio::task::spawn_blocking(move || execute_spawned(app, sql, params)).await;
+
+    if let Some((mut sw, sql_to_monitor)) = debug_sql {
+        sw.pause();
+        println!("[{}] is executed in {:?}", sql_to_monitor, sw.duration());
+    }
 
     let Ok(result) = result else {
         return Err(format!("Panic during the execute_spawned"));
     };
-
-    sw.pause();
-
-    println!("[{}] is executed in {:?}", sql_to_measure, sw.duration());
 
     result
 }
