@@ -31,7 +31,8 @@ async fn handle_request(
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
     let result =
-        crate::scripts::get_table_schema_description(&action.app, &input_data.table_name).await;
+        crate::scripts::get_table_schema_description(action.app.clone(), &input_data.table_name)
+            .await;
 
     let result = match result {
         Ok(ok) => ok,

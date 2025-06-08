@@ -34,7 +34,7 @@ async fn handle_request(
 ) -> Result<HttpOkResult, HttpFailResult> {
     let (sql, params) = input_data.deserialize();
 
-    let result = crate::scripts::execute_select(&action.app, sql, params).await;
+    let result = crate::scripts::execute_select(action.app.clone(), sql, params).await;
 
     let result = match result {
         Ok(ok) => ok,
